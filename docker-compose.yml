@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: nginx_proxy
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+    environment:
+      - ACTIVE_POOL=${ACTIVE_POOL:-blue}
+      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx/conf.d
+    depends_on:
+      app_blue:
+        condition: service_healthy
+      app_green:
+        condition: service_healthy
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  app_blue:
+    image: ${BLUE_IMAGE:-yimikaade/wonderful:latest}
+    container_name: app_blue
+    ports:
+      - "8081:3000"
+    environment:
+      - APP_POOL=blue
+      - RELEASE_ID=${RELEASE_ID_BLUE:-blue-v1.0.0}
+      - PORT=3000
+    networks:
+      - app_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  app_green:
+    image: ${GREEN_IMAGE:-yimikaade/wonderful:latest}
+    container_name: app_green
+    ports:
+      - "8082:3000"
+    environment:
+      - APP_POOL=green
+      - RELEASE_ID=${RELEASE_ID_GREEN:-green-v1.0.0}
+      - PORT=3000
+    networks:
+      - app_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+networks:
+  app_network:
+    driver: bridge
