@@ -6,12 +6,12 @@ Complete implementation of Blue/Green deployment with automatic failover and zer
 
 ### 1. Start the system
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ### 2. Wait for services to be healthy
 ```bash
-docker-compose ps
+docker compose ps
 ```
 
 ### 3. Test the deployment
@@ -55,7 +55,7 @@ curl -X POST http://localhost:8081/chaos/stop
 ### Switch to Green
 ```bash
 sed -i 's/ACTIVE_POOL=blue/ACTIVE_POOL=green/' .env
-docker-compose up -d --force-recreate nginx
+docker compose up -d --force-recreate nginx
 ```
 
 ### Verify
@@ -68,16 +68,16 @@ curl -i http://localhost:8080/version
 
 ```bash
 # View logs
-docker-compose logs -f nginx
+docker compose logs -f nginx
 
 # Check service status
-docker-compose ps
+docker compose ps
 
 # Restart everything
-docker-compose restart
+docker compose restart
 
 # Stop and clean up
-docker-compose down
+docker compose down
 ```
 
 ## Architecture
@@ -89,25 +89,25 @@ Client → Nginx:8080 → Blue:3000 (primary)
 
 ## Key Features
 
-✅ Zero failed requests during failover  
-✅ Automatic failover in <5 seconds  
-✅ Headers preserved (X-App-Pool, X-Release-Id)  
-✅ Manual toggle support  
-✅ Comprehensive test suite  
+✅ Zero failed requests during failover
+✅ Automatic failover in <5 seconds
+✅ Headers preserved (X-App-Pool, X-Release-Id)
+✅ Manual toggle support
+✅ Comprehensive test suite
 
 ## Troubleshooting
 
 **Problem**: Containers won't start
 ```bash
-docker-compose down
-docker-compose up -d --force-recreate
+docker compose down
+docker compose up -d --force-recreate
 ```
 
 **Problem**: Health checks failing
 ```bash
 # Check app logs
-docker-compose logs app_blue
-docker-compose logs app_green
+docker compose logs app_blue
+docker compose logs app_green
 ```
 
 **Problem**: Failover not working
@@ -116,5 +116,5 @@ docker-compose logs app_green
 curl http://localhost:8081/version  # Should return 500
 
 # Check Nginx logs
-docker-compose logs nginx
+docker compose logs nginx
 ```
