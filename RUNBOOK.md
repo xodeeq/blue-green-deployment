@@ -3,6 +3,21 @@
 ## Overview
 This runbook provides guidance for responding to alerts from the Blue/Green deployment monitoring system.
 
+## Quick Reference
+
+| Alert Type | Color | Meaning | Immediate Action |
+|------------|-------|---------|------------------|
+| **Failover** | 🟠 Orange | Traffic switched from one pool to another due to health issues | Check health of failed pool, verify if expected |
+| **High Error Rate** | 🔴 Red | 5xx errors exceed threshold over sliding window | Inspect upstream logs, consider pool toggle or rollback |
+| **Recovery** | 🟢 Green | Previously failed pool has recovered and is healthy | Note recovery time, document resolution |
+
+**When to act immediately:**
+- Failover during business hours → Investigate within 15 minutes
+- High error rate → Respond immediately, users are affected
+- Recovery → Acknowledge and document
+
+---
+
 ## Alert Types
 
 ### 1. Failover Alert 🔄
@@ -252,13 +267,6 @@ MAINTENANCE_MODE=false
    MAINTENANCE_MODE=true
    ```
 
----
-
-## Emergency Contacts
-
-- **On-call Engineer:** [Your contact info]
-- **Slack Channel:** #deployments-alerts
-- **Escalation:** [Manager contact]
 
 ---
 
