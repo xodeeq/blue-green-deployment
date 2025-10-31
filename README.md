@@ -1,120 +1,63 @@
-# Blue/Green Deployment with Nginx Auto-Failover
+## Stage 3: Monitoring and Alerting
 
-Complete implementation of Blue/Green deployment with automatic failover and zero-downtime switching.
+### Setup
 
-## Quick Start
-
-### 1. Start the system
+1. **Configure Slack Webhook:**
 ```bash
-docker compose up -d
+   # Edit .env and add your Slack webhook URL
+   SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
 ```
 
-### 2. Wait for services to be healthy
+2. **Start all services:**
 ```bash
-docker compose ps
+   docker compose up -d --build
 ```
 
-### 3. Test the deployment
+3. **Verify services are running:**
 ```bash
-# Test through Nginx (should hit Blue)
-curl -i http://localhost:8080/version
-
-# Run automated tests
-./test-failover.sh
+   docker compose ps
 ```
 
-## Testing Failover Manually
+### Testing Alerts
 
-### Step 1: Verify Blue is active
+**Automated tests:**
 ```bash
-curl -i http://localhost:8080/version
-# Should show: X-App-Pool: blue
+./test-monitoring.sh
 ```
 
-### Step 2: Trigger chaos on Blue
+**Manual alert generation (for screenshots):**
 ```bash
-curl -X POST http://localhost:8081/chaos/start?mode=error
+./trigger-alerts-for-screenshots.sh
 ```
 
-### Step 3: Watch automatic failover
+### Viewing Logs
+
+**Check Nginx structured logs:**
 ```bash
-for i in {1..10}; do
-  curl -s http://localhost:8080/version | grep X-App-Pool
-  sleep 0.5
-done
-# Should show: X-App-Pool: green (all requests succeed!)
+docker compose exec nginx tail -f /var/log/nginx/access.log
 ```
 
-### Step 4: Stop chaos
+**Check alert watcher logs:**
 ```bash
-curl -X POST http://localhost:8081/chaos/stop
+docker compose logs -f alert_watcher
 ```
 
-## Manual Toggle (Blue ↔ Green)
+**Verify Slack messages in your Slack channel**
 
-### Switch to Green
-```bash
-sed -i 's/ACTIVE_POOL=blue/ACTIVE_POOL=green/' .env
-docker compose up -d --force-recreate nginx
-```
+### Screenshots
 
-### Verify
-```bash
-curl -i http://localhost:8080/version
-# Should show: X-App-Pool: green
-```
+See `/screenshots` directory for:
+- `failover-alert.png` - Slack message when failover occurs
+- `error-rate-alert.png` - Slack message when error rate exceeds threshold
+- `nginx-logs.png` - Structured Nginx log format showing pool, release, status
 
-## Useful Commands
+### Configuration
 
-```bash
-# View logs
-docker compose logs -f nginx
+All settings in `.env`:
+- `SLACK_WEBHOOK_URL` - Slack incoming webhook
+- `ERROR_RATE_THRESHOLD` - Error percentage before alert (default: 2%)
+- `WINDOW_SIZE` - Number of requests to track (default: 200)
+- `ALERT_COOLDOWN_SEC` - Seconds between same alert type (default: 300)
+- `MAINTENANCE_MODE` - Suppress alerts during maintenance (default: false)
 
-# Check service status
-docker compose ps
-
-# Restart everything
-docker compose restart
-
-# Stop and clean up
-docker compose down
-```
-
-## Architecture
-
-```
-Client → Nginx:8080 → Blue:3000 (primary)
-                    → Green:3000 (backup, used on Blue failure)
-```
-
-## Key Features
-
-✅ Zero failed requests during failover
-✅ Automatic failover in <5 seconds
-✅ Headers preserved (X-App-Pool, X-Release-Id)
-✅ Manual toggle support
-✅ Comprehensive test suite
-
-## Troubleshooting
-
-**Problem**: Containers won't start
-```bash
-docker compose down
-docker compose up -d --force-recreate
-```
-
-**Problem**: Health checks failing
-```bash
-# Check app logs
-docker compose logs app_blue
-docker compose logs app_green
-```
-
-**Problem**: Failover not working
-```bash
-# Verify chaos is active
-curl http://localhost:8081/version  # Should return 500
-
-# Check Nginx logs
-docker compose logs nginx
-```
+See `RUNBOOK.md` for operational procedures.
